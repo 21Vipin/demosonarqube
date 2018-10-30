@@ -1,0 +1,76 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.17.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath "se.transmode.gradle:gradle-docker:1.2"
+		classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.6.2"
+		classpath 'com.vanniktech:gradle-android-junit-jacoco-plugin:0.6.0'
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.sonarqube'
+apply plugin: 'jacoco'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'docker'
+apply plugin: 'application'
+mainClassName = 'com.example.demoSonarQube.DemoSonarQubeApplication'
+
+//	distDocker {
+//	//useApi = false
+//		dryRun = true
+//}
+
+task buildDocker(type: Docker) {
+	baseImage = 'davidcaste/alpine-java-unlimited-jce:jdk8'
+	push = project.hasProperty('push')
+	tag = 'nexus.techolution.com:8083/rrs/commandaction-sevice'
+	addFile {
+		from jar
+		rename {'app.jar'}
+	}
+	entryPoint(['java', '-Djava.security.egd=file:/dev/./urandom', '-jar', '/app.jar'])
+//	println("--------------------------------")
+//	runCommand "gradle sonarqube"
+//	println("--------------------------------")
+//	sonarqube{
+//		properties{
+//			property 'sonar.projectName', 'demoSOANRQUBE'
+////			property 'sonar.host.url' ,
+//		}
+//	}
+}
+
+sonarqube {
+	properties {
+		property 'sonar.projectName', 'demoSONAaarqube'
+//		property 'sonar.import_unknown_files', true
+		property 'sonar.host.url' , 'http:rrs-auto.centralus.cloudapp.azure.com:9000'
+		property 'sonar.scm.provider', 'git'
+//        property
+	}
+
+}
+project.tasks["sonarqube"].dependsOn "build"
+
+buildDocker.dependsOn(build)
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+
+dependencies {
+	compile('org.springframework.boot:spring-boot-starter-web')
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+}
